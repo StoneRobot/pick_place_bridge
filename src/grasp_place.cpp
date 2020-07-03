@@ -394,11 +394,13 @@ bool GraspPlace::speedScale(bool isSlow)
 {
     if(isSlow)
     {
+	ROS_INFO_STREAM("Velocity Scaling Factor: 0.1");
         MoveGroup->setMaxVelocityScalingFactor(0.1);
         MoveGroup->setMaxVelocityScalingFactor(0.1);
     }
     else
     {
+	ROS_INFO_STREAM("Velocity Scaling Factor: 1");
         MoveGroup->setMaxVelocityScalingFactor(1);
         MoveGroup->setMaxVelocityScalingFactor(1);
     }
