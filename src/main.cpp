@@ -17,7 +17,9 @@ private:
 
     void backHomeCallback(const std_msgs::Int8::ConstPtr& msg);
     void sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg);
-    
+    void pedestrainCallback(const std_msgs::Bool::ConstPtr& msg);
+    void handgestureCallback(const std_msgs::Bool::ConstPtr& msg);
+
     
     ros::NodeHandle nh;
     ros::ServiceServer pickServer;
@@ -28,6 +30,9 @@ private:
 
     ros::Subscriber stopMoveSub;
     ros::Subscriber backHomeSub;
+
+    ros::Subscriber pedestrainSub;
+    ros::Subscriber handgestureSub;
 
 };
 
@@ -45,6 +50,8 @@ Grasp::Grasp(ros::NodeHandle n)
 
     backHomeSub = nh.subscribe("/back_home", 1, &Grasp::backHomeCallback, this);
     stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::sotpMoveCallback, this);
+    pedestrainSub = nh.subscribe("/pedestrian_detection", 10, &Grasp::pedestrainCallback, this);
+    handgestureSub = nh.subscribe("/handgesture_detection", 10, &Grasp::handgestureCallback, this);
 };
 
 bool Grasp::pickCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
@@ -87,6 +94,16 @@ void Grasp::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
 void Grasp::sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg)
 {
     stop();
+}
+
+void Grasp::pedestrainCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    speedScale(msg->data);
+}
+
+void Grasp::handgestureCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    handgesture();
 }
 
 

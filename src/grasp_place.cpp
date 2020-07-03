@@ -389,3 +389,30 @@ bool GraspPlace::closeGripper()
     ROS_INFO_STREAM("check gripper server");
     return false;
 }
+
+bool GraspPlace::speedScale(bool isSlow)
+{
+    if(isSlow)
+    {
+        MoveGroup->setMaxVelocityScalingFactor(0.1);
+        MoveGroup->setMaxVelocityScalingFactor(0.1);
+    }
+    else
+    {
+        MoveGroup->setMaxVelocityScalingFactor(1);
+        MoveGroup->setMaxVelocityScalingFactor(1);
+    }
+    return true;
+}
+
+bool GraspPlace::handgesture()
+{
+    geometry_msgs::PoseStamped targetPose;
+    targetPose.header.frame_id = "world";
+    targetPose.pose.position.x = 0.80;
+    targetPose.pose.position.y = 0.0;
+    targetPose.pose.position.z = 1.4;
+    targetPose.pose.orientation.w = 1;
+    move(targetPose);
+    return true;
+}

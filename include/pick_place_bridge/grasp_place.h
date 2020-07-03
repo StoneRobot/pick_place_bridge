@@ -46,6 +46,8 @@ public:
     bool fixedPick(geometry_msgs::PoseStamped pose, double pre_grasp_approach, double post_grasp_retreat);
     bool fixedPlace(double y);
     bool backHome();
+    bool speedScale(bool isSlow);
+    bool handgesture();
     bool stop();
     bool openGripper();
     bool closeGripper();
