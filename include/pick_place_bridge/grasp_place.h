@@ -19,6 +19,8 @@
 
 #include "hirop_msgs/openGripper.h"
 #include "hirop_msgs/closeGripper.h"
+#include "hirop_msgs/moveSeqIndex.h"
+#include "hirop_msgs/getForce.h"
 
 class GraspPlace
 {
@@ -26,10 +28,9 @@ public:
     GraspPlace(ros::NodeHandle n);
     virtual ~GraspPlace();
 
-    void move(geometry_msgs::PoseStamped& targetPose);
-    moveit::planning_interface::MoveItErrorCode setAndMove(geometry_msgs::PoseStamped& targetPose);
-    moveit::planning_interface::MoveItErrorCode moveGroupPlanAndMove();
-    moveit::planning_interface::MoveItErrorCode loop_move();
+    bool setAndMove(geometry_msgs::PoseStamped& targetPose);
+    bool moveGroupPlanAndMove();
+    bool loop_move();
 
     bool robotMoveCartesianUnit2(double x, double y, double z);
     bool robotMoveCartesianUnit2(geometry_msgs::PoseStamped& poseStamped);
@@ -47,21 +48,36 @@ public:
     bool fixedPlace(double y);
     bool backHome();
     bool speedScale(bool isSlow);
-    bool handgesture();
     bool stop();
     bool openGripper();
     bool closeGripper();
+    bool fiveFightGripperPoseIndex(int index);
+    void detachRobotObject();
 private:
-
+    void detachObjectCallback(const std_msgs::Empty::ConstPtr& msg);
+    // 发布
+    ros::Publisher planning_scene_diff_publisher;
+    // 订阅
+    ros::Subscriber detachObjectSub;
+    // 客户端
     ros::ServiceClient openGripperClient;
     ros::ServiceClient closeGripperClient;
-    ros::Publisher planning_scene_diff_publisher;
+    ros::ServiceClient getForceClient;
+    ros::ServiceClient moveSeqClient;
 
     ros::NodeHandle nh;
     moveit::planning_interface::MoveGroupInterface* MoveGroup;
     bool isStop=false;
 
+    // 常量
     const std::string OBJECT = "object";
     const std::string GROUP = "arm";
+    const std::string HOME_POSE = "home";
+    const std::string FATHER_FRAME = "world";
+    const int SHAKE = 1;
+    const int GRASP = 2;
+    const int OK = 3;
+    const int HOME = 4;
+    const int BOX = 5;
 };
  

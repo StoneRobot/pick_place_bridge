@@ -15,12 +15,12 @@ private:
     bool fixedPickCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
-	bool handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
+	
 	// 话题回调
     void backHomeCallback(const std_msgs::Int8::ConstPtr& msg);
     void sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg);
-    void pedestrainCallback(const std_msgs::Bool::ConstPtr& msg);
-    void handgestureCallback(const std_msgs::Bool::ConstPtr& msg);
+    void speedScaleCallback(const std_msgs::Bool::ConstPtr& msg);
+    
 	// 服务器
     ros::ServiceServer pickServer;
     ros::ServiceServer placeServer;
@@ -31,8 +31,8 @@ private:
 	// 订阅
     ros::Subscriber stopMoveSub;
     ros::Subscriber backHomeSub;
-    ros::Subscriber pedestrainSub;
-    ros::Subscriber handgestureSub;
+    ros::Subscriber speedScaleSub;
+    
 
 };
 
@@ -46,12 +46,12 @@ Grasp::Grasp(ros::NodeHandle n)
     fixedPickServer = nh.advertiseService("fixed_pick", &Grasp::fixedPickCallback, this);
     fixedPlaceServer = nh.advertiseService("fixed_place", &Grasp::fixedPlaceCallback, this);
     moveServer = nh.advertiseService("move", &Grasp::moveCallback, this);
-	handgestureServer = nh.advertiseService("handClaw_shakeHand", &Grasp::handgestureSerCallback, this);
+	
 	// 话题
     backHomeSub = nh.subscribe("/back_home", 1, &Grasp::backHomeCallback, this);
     stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::sotpMoveCallback, this);
-    pedestrainSub = nh.subscribe("/pedestrian_detection", 10, &Grasp::pedestrainCallback, this);
-    handgestureSub = nh.subscribe("/handgesture_detection", 10, &Grasp::handgestureCallback, this);
+    speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
+    
 };
 
 bool Grasp::pickCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
@@ -82,16 +82,11 @@ bool Grasp::fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, p
 
 bool Grasp::moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
-    this->move(req.Pose);
+    setAndMove(req.Pose);
     return rep.result;
 }
 
-bool Grasp::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
-{
-    handgesture();
-	rep.respond = true;
-	return true;
-}
+
 
 void Grasp::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
 {
@@ -103,15 +98,11 @@ void Grasp::sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg)
     stop();
 }
 
-void Grasp::pedestrainCallback(const std_msgs::Bool::ConstPtr& msg)
+void Grasp::speedScaleCallback(const std_msgs::Bool::ConstPtr& msg)
 {
     speedScale(msg->data);
 }
 
-void Grasp::handgestureCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-    handgesture();
-}
 
 
 
