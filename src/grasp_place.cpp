@@ -424,8 +424,10 @@ bool GraspPlace::fixedPlace(double y)
 
 bool GraspPlace::backHome()
 {
+    ROS_INFO_STREAM("----back home ...----");
     MoveGroup->setNamedTarget(HOME_POSE);
     fiveFightGripperPoseIndex(HOME);
+    ROS_INFO_STREAM("----back home end----");
     return code2Bool(MoveGroup->move());
 }
 
