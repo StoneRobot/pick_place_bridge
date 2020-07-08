@@ -69,6 +69,7 @@ Eigen3)
 ## Generate services in the 'srv' folder
 add_service_files(FILES
   PickPlacePose.srv
+  recordPose.srv
 )
 
 ## Generate actions in the 'action' folder

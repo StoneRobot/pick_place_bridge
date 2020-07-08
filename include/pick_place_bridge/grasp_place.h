@@ -53,15 +53,21 @@ public:
     bool closeGripper();
     bool fiveFightGripperPoseIndex(int index);
     void detachRobotObject();
+    void setStopFlag(bool flag);
+    geometry_msgs::PoseStamped getNowPose();
 private:
     void detachObjectCallback(const std_msgs::Empty::ConstPtr& msg);
     // 发布
+    // 用于发布OBJECT
     ros::Publisher planning_scene_diff_publisher;
     // 订阅
+    // 从机器人上移除OBJECT
     ros::Subscriber detachObjectSub;
     // 客户端
+    // 二指
     ros::ServiceClient openGripperClient;
     ros::ServiceClient closeGripperClient;
+    // 五指
     ros::ServiceClient getForceClient;
     ros::ServiceClient moveSeqClient;
 
@@ -78,6 +84,6 @@ private:
     const int GRASP = 2;
     const int OK = 3;
     const int HOME = 4;
-    const int BOX = 5;
+    const int SHAKE_PREPARE = 5;
 };
  

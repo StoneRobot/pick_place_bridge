@@ -504,3 +504,14 @@ bool GraspPlace::speedScale(bool isSlow)
     return true;
 }
 
+void GraspPlace::setStopFlag(bool flag)
+{
+    isStop = flag;
+}
+
+geometry_msgs::PoseStamped GraspPlace::getNowPose()
+{
+    setStartState();
+    return MoveGroup->getCurrentPose();
+}
+
