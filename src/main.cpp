@@ -2,6 +2,7 @@
 #include "pick_place_bridge/PickPlacePose.h"
 #include "pick_place_bridge/recordPose.h"
 #include "rb_msgAndSrv/rb_DoubleBool.h"
+#include <std_srvs/Empty.h>
 
 
 class Grasp : public GraspPlace
@@ -17,11 +18,11 @@ private:
     bool fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool recerdPoseCallback(pick_place_bridge::recordPose::Request& req, pick_place_bridge::recordPose::Response& rep);
+    bool backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep);
 	
 	// 话题回调
     void sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg);
     void startMoveCallback(const std_msgs::Bool::ConstPtr& msg);
-    void backHomeCallback(const std_msgs::Int8::ConstPtr& msg);
     void speedScaleCallback(const std_msgs::Bool::ConstPtr& msg);
     
 	// 服务器
@@ -32,10 +33,10 @@ private:
     ros::ServiceServer moveServer;
     ros::ServiceServer handgestureServer;
     ros::ServiceServer recerdPoseServer;
+    ros::ServiceServer backHomeServer;
 	// 订阅
     ros::Subscriber stopMoveSub;
     ros::Subscriber startMoveSub;
-    ros::Subscriber backHomeSub;
     ros::Subscriber speedScaleSub;
     
 
@@ -52,10 +53,10 @@ Grasp::Grasp(ros::NodeHandle n)
     fixedPlaceServer = nh.advertiseService("fixed_place", &Grasp::fixedPlaceCallback, this);
     moveServer = nh.advertiseService("move", &Grasp::moveCallback, this);
 	recerdPoseServer = nh.advertiseService("recordPose", &Grasp::recerdPoseCallback, this);
+    backHomeServer = nh.advertiseService("/back_home", &Grasp::backHomeCallback, this);
 	// 话题
     stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::sotpMoveCallback, this);
     startMoveSub = nh.subscribe("start_move", 1, &Grasp::startMoveCallback, this);
-    backHomeSub = nh.subscribe("/back_home", 1, &Grasp::backHomeCallback, this);
     speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
     
 };
@@ -111,7 +112,7 @@ void Grasp::startMoveCallback(const std_msgs::Bool::ConstPtr& msg)
         setStopFlag(false);
 }
 
-void Grasp::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
+bool Grasp::backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep)
 {
     backHome();
 }
