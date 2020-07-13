@@ -1,6 +1,7 @@
 #include "pick_place_bridge/grasp_place.h"
 #include "pick_place_bridge/PickPlacePose.h"
 #include "pick_place_bridge/recordPose.h"
+#include "pick_place_bridge/SpeedScale.h"
 #include "rb_msgAndSrv/rb_DoubleBool.h"
 #include <std_srvs/Empty.h>
 
@@ -19,11 +20,13 @@ private:
     bool moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool recerdPoseCallback(pick_place_bridge::recordPose::Request& req, pick_place_bridge::recordPose::Response& rep);
     bool backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep);
+    bool setSpeedScaleCallback(pick_place_bridge::SpeedScale::Request& req, pick_place_bridge::SpeedScale::Response& rep);
+    bool stopMoveCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep);
 	
 	// 话题回调
-    void sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg);
+    void stopMoveCallback(const std_msgs::Bool::ConstPtr& msg);
     void startMoveCallback(const std_msgs::Bool::ConstPtr& msg);
-    void speedScaleCallback(const std_msgs::Bool::ConstPtr& msg);
+    // void speedScaleCallback(const std_msgs::Bool::ConstPtr& msg);
     
 	// 服务器
     ros::ServiceServer pickServer;
@@ -34,12 +37,12 @@ private:
     ros::ServiceServer handgestureServer;
     ros::ServiceServer recerdPoseServer;
     ros::ServiceServer backHomeServer;
+    ros::ServiceServer setSpeedScaleServer;
+    ros::ServiceServer stopMoveServer;
 	// 订阅
     ros::Subscriber stopMoveSub;
     ros::Subscriber startMoveSub;
-    ros::Subscriber speedScaleSub;
-    
-
+    // ros::Subscriber speedScaleSub;
 };
 
 Grasp::Grasp(ros::NodeHandle n)
@@ -54,10 +57,12 @@ Grasp::Grasp(ros::NodeHandle n)
     moveServer = nh.advertiseService("move", &Grasp::moveCallback, this);
 	recerdPoseServer = nh.advertiseService("recordPose", &Grasp::recerdPoseCallback, this);
     backHomeServer = nh.advertiseService("/back_home", &Grasp::backHomeCallback, this);
+    setSpeedScaleServer = nh.advertiseService("/set_speed_scale", &Grasp::setSpeedScaleCallback, this);
+    stopMoveServer = nh.advertiseService("stopMove", &Grasp::stopMoveCallback, this);
 	// 话题
-    stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::sotpMoveCallback, this);
+    stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::stopMoveCallback, this);
     startMoveSub = nh.subscribe("start_move", 1, &Grasp::startMoveCallback, this);
-    speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
+    // speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
     
 };
 
@@ -89,7 +94,7 @@ bool Grasp::fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, p
 
 bool Grasp::moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
-    setAndMove(req.Pose);
+    move(req.Pose);
     return rep.result;
 }
 
@@ -99,8 +104,19 @@ bool Grasp::recerdPoseCallback(pick_place_bridge::recordPose::Request& req, pick
     return true;
 }
 
+bool Grasp::setSpeedScaleCallback(pick_place_bridge::SpeedScale::Request& req, pick_place_bridge::SpeedScale::Response& rep)
+{
+    speedScale(req.scale);
+    rep.result = true;
+    return false;
+}
 
-void Grasp::sotpMoveCallback(const std_msgs::Bool::ConstPtr& msg)
+bool Grasp::stopMoveCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep)
+{
+    stop();
+}
+
+void Grasp::stopMoveCallback(const std_msgs::Bool::ConstPtr& msg)
 {
     if(msg->data)
         stop();
@@ -118,11 +134,10 @@ bool Grasp::backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Res
 }
 
 
-void Grasp::speedScaleCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-    speedScale(msg->data);
-}
-
+// void Grasp::speedScaleCallback(const std_msgs::Bool::ConstPtr& msg)
+// {
+//     // speedScale(msg->data);
+// }
 
 
 

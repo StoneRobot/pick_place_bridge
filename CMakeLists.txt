@@ -70,6 +70,7 @@ Eigen3)
 add_service_files(FILES
   PickPlacePose.srv
   recordPose.srv
+  SpeedScale.srv
 )
 
 ## Generate actions in the 'action' folder

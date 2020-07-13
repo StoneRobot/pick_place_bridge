@@ -15,7 +15,8 @@ GraspPlace::GraspPlace(ros::NodeHandle n)
     getForceClient = nh.serviceClient<hirop_msgs::getForce>("getForce");
     moveSeqClient = nh.serviceClient<hirop_msgs::moveSeqIndex>("moveSeq");
 
-    // MoveGroup->setGoalPositionTolerance(0.02);
+    // MoveGroup->setGoalPositionTolerance(0.01);
+    MoveGroup->setGoalOrientationTolerance(0.05);
 } 
 
 GraspPlace::~GraspPlace()
@@ -53,11 +54,14 @@ bool GraspPlace::code2Bool(moveit::planning_interface::MoveItErrorCode code)
 bool GraspPlace::setAndMove(geometry_msgs::PoseStamped& targetPose)
 {
     setStartState();
-    ROS_INFO_STREAM("setAndMove: " << targetPose);
+    // ROS_INFO_STREAM("setAndMove: " << targetPose);
     MoveGroup->setPoseTarget(targetPose);
+    MoveGroup->getPoseTarget();
+    ROS_INFO_STREAM(MoveGroup->getPoseTarget());
     bool flag;
     flag = moveGroupPlanAndMove();
     MoveGroup->detachObject(OBJECT);
+
     return flag;
 }
 
@@ -111,7 +115,18 @@ bool GraspPlace::robotMoveCartesianUnit2(double x, double y, double z)
     std::vector<geometry_msgs::Pose> waypoints;
     waypoints.push_back(target_pose);
     moveit_msgs::RobotTrajectory trajectory;
-    while( MoveGroup->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory) < 0.8 && !isStop && ros::ok());
+    int cnt=0;
+    double computeCartesian;
+    while(ros::ok())
+    {
+        computeCartesian = MoveGroup->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+        ROS_INFO_STREAM("computeCartesian: " << computeCartesian); 
+        if(computeCartesian > 0.75 || isStop || cnt == 5)
+        {
+            break;
+        }
+        ++cnt;
+    }
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     plan.trajectory_ = trajectory;
     moveit::planning_interface::MoveItErrorCode code;
@@ -126,19 +141,31 @@ bool GraspPlace::robotMoveCartesianUnit2(double x, double y, double z)
 // 使用世界坐标系
 bool GraspPlace::robotMoveCartesianUnit2(geometry_msgs::PoseStamped& poseStamped)
 {
+    ROS_INFO_STREAM("robotMoveCartesianUnit2------------>>pose");
     setStartState();
 
     geometry_msgs::PoseStamped temp_pose = MoveGroup->getCurrentPose();
     std::vector<geometry_msgs::Pose> waypoints;
 
-    const double jump_threshold = 0.0;
-    const double eef_step = 0.01;
+    const double jump_threshold = 0;
+    const double eef_step = 0.02;
 
     waypoints.push_back(temp_pose.pose);
     waypoints.push_back(poseStamped.pose);
 
     moveit_msgs::RobotTrajectory trajectory;
-    while( MoveGroup->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory) < 0.75 && !isStop && ros::ok());
+    int cnt=0;
+    double computeCartesian;
+    while(ros::ok())
+    {
+        computeCartesian = MoveGroup->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+        ROS_INFO_STREAM("computeCartesian: " << computeCartesian);
+        if(computeCartesian >= 0.5 || isStop || cnt == 5)
+        {
+            break;
+        }
+        ++cnt;
+    }
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     plan.trajectory_ = trajectory;
     moveit::planning_interface::MoveItErrorCode code;
@@ -190,11 +217,11 @@ bool GraspPlace::robotMoveCartesianUnit2(geometry_msgs::PoseStamped& poseStamped
     }
 }
 
-void GraspPlace::showObject(geometry_msgs::Pose pose)
+void GraspPlace::showObject(geometry_msgs::Pose pose, std::string objectName="object")
 {
     std::vector<moveit_msgs::CollisionObject> collisionObject;
     collisionObject.resize(1);
-    collisionObject[0].id = OBJECT;
+    collisionObject[0].id = objectName;
     collisionObject[0].header.frame_id = FATHER_FRAME;
     collisionObject[0].primitives.resize(1);
     collisionObject[0].primitives[0].type = collisionObject[0].primitives[0].BOX;
@@ -246,6 +273,20 @@ bool GraspPlace::setStartState()
     return true;
 }
 
+bool GraspPlace::increaseTheAccuracyOfQuat(geometry_msgs::PoseStamped& pose)
+{
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(pose.pose.orientation, quat);
+    double r, p, y;
+
+    tf::Matrix3x3(quat).setRPY(r, p, y);
+
+    
+    tf2::Quaternion orientation;
+    orientation.setRPY(y, p, r);
+    pose.pose.orientation = tf2::toMsg(orientation);
+}
+
 geometry_msgs::PoseStamped GraspPlace::getPreparePose(geometry_msgs::PoseStamped pose, double x)
 {
     Eigen::Matrix3d R = Quaternion2RotationMatrix(pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
@@ -284,29 +325,12 @@ Eigen::Matrix3d GraspPlace::Quaternion2RotationMatrix(const double x,const doubl
 
 bool GraspPlace::pick(geometry_msgs::PoseStamped pose, double pre_grasp_approach=0.1, double post_grasp_retreat=0.1)
 {
-    // geometry_msgs::PoseStamped preparePose;
-    // rmObject(OBJECT);
-    // showObject(pose.pose);
-    // preparePose = getPreparePose(pose, pre_grasp_approach);
-    // ROS_INFO_STREAM("preparePose: " << preparePose);
-    // setAndMove(preparePose);
-
-    // fiveFightGripperPoseIndex(HOME);
-    // robotMoveCartesianUnit2(pose);
-
-    // fiveFightGripperPoseIndex(GRASP);
-    // MoveGroup->attachObject(OBJECT);
-    // robotMoveCartesianUnit2(0, 0, 0.01);
-
-    // geometry_msgs::PoseStamped nowPose = MoveGroup->getCurrentPose();
-    // geometry_msgs::PoseStamped endPose;
-    // endPose = getPreparePose(nowPose, post_grasp_retreat);
-    // robotMoveCartesianUnit2(endPose);
-    // return true;
-
     geometry_msgs::PoseStamped preparePose;
+
     rmObject(OBJECT);
     showObject(pose.pose);
+
+    // increaseTheAccuracyOfQuat(pose);
     preparePose = getPreparePose(pose, pre_grasp_approach);
     ROS_INFO_STREAM("preparePose: " << preparePose);
     if(setAndMove(preparePose))
@@ -322,10 +346,47 @@ bool GraspPlace::pick(geometry_msgs::PoseStamped pose, double pre_grasp_approach
                 geometry_msgs::PoseStamped endPose;
                 endPose = getPreparePose(nowPose, post_grasp_retreat);
                 if(robotMoveCartesianUnit2(endPose))
+                {
+                    ROS_INFO_STREAM("Execute successfully");
                     return true;
+                }
             }
         }
     }
+    if(isStop)
+        isStop = false;
+    ROS_INFO_STREAM("Execute failed");
+    return false;
+}
+
+
+bool GraspPlace::place(geometry_msgs::PoseStamped pose, double pre_place_approach=0.75, double post_place_retreat=0.75)
+{
+    // increaseTheAccuracyOfQuat(pose);
+    geometry_msgs::PoseStamped preparePose;
+    preparePose = getPreparePose(pose, pre_place_approach);
+    if(setAndMove(preparePose))
+    {
+        if(robotMoveCartesianUnit2(pose))
+        {
+            fiveFightGripperPoseIndex(HOME);
+            MoveGroup->detachObject(OBJECT);
+            if(robotMoveCartesianUnit2(0, 0, 0.01))
+            {
+                geometry_msgs::PoseStamped nowPose = MoveGroup->getCurrentPose();
+                geometry_msgs::PoseStamped endPose;
+                endPose = getPreparePose(nowPose, post_place_retreat);
+                if(robotMoveCartesianUnit2(endPose))
+                {
+                    ROS_INFO_STREAM("Execute successfully");
+                    return true;
+                }
+            }
+        }
+    }
+    if(isStop)
+        isStop = false;
+    ROS_INFO_STREAM("Execute failed");
     return false;
 }
 
@@ -360,46 +421,9 @@ bool GraspPlace::fixedPick(geometry_msgs::PoseStamped pose, double pre_grasp_app
 
     robotMoveCartesianUnit2(0, 0.1, 0);
     ROS_INFO_STREAM("---------------pick fixed orientation over---------------");
+    if(isStop)
+        isStop = false;
     return true;
-}
-
-bool GraspPlace::place(geometry_msgs::PoseStamped pose, double pre_place_approach=0.1, double post_place_retreat=0.1)
-{
-    // geometry_msgs::PoseStamped preparePose;
-    // preparePose = getPreparePose(pose, pre_place_approach);
-    // setAndMove(preparePose);
-    // robotMoveCartesianUnit2(pose);
-
-    // openGripper();
-    // MoveGroup->detachObject(OBJECT);
-    // robotMoveCartesianUnit2(0, 0, 0.01);
-
-    // geometry_msgs::PoseStamped nowPose = MoveGroup->getCurrentPose();
-    // geometry_msgs::PoseStamped endPose;
-    // endPose = getPreparePose(nowPose, post_place_retreat);
-    // robotMoveCartesianUnit2(endPose);
-    // return true;
-    geometry_msgs::PoseStamped preparePose;
-    preparePose = getPreparePose(pose, pre_place_approach);
-    if(setAndMove(preparePose))
-    {
-        if(robotMoveCartesianUnit2(pose))
-        {
-            if(fiveFightGripperPoseIndex(HOME))
-            {
-                MoveGroup->detachObject(OBJECT);
-                if(robotMoveCartesianUnit2(0, 0, 0.01))
-                {
-                    geometry_msgs::PoseStamped nowPose = MoveGroup->getCurrentPose();
-                    geometry_msgs::PoseStamped endPose;
-                    endPose = getPreparePose(nowPose, post_place_retreat);
-                    if(robotMoveCartesianUnit2(endPose))
-                        return true;
-                }
-            }
-        }
-    }
-    return false;
 }
 
 bool GraspPlace::fixedPlace(double y)
@@ -419,16 +443,34 @@ bool GraspPlace::fixedPlace(double y)
     robotMoveCartesianUnit2(0, 0, 0.01);
     
     robotMoveCartesianUnit2(-0.1, 0, 0);
+    if(isStop)
+        isStop = false;
     return true;
+}
+
+bool GraspPlace::move(geometry_msgs::PoseStamped& pose)
+{
+    bool flag;
+    flag = setAndMove(pose);
+    if(isStop)
+        isStop = false;
+    return flag;
 }
 
 bool GraspPlace::backHome()
 {
     ROS_INFO_STREAM("----back home ...----");
-    MoveGroup->setNamedTarget(HOME_POSE);
+    bool result=false;
+    if(!isStop)
+    {
+        MoveGroup->setNamedTarget(HOME_POSE);
+        result = (MoveGroup->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    }
     fiveFightGripperPoseIndex(HOME);
     ROS_INFO_STREAM("----back home end----");
-    return code2Bool(MoveGroup->move());
+    if(isStop)
+        isStop=false;
+    return result;
 }
 
 bool GraspPlace::stop()
@@ -475,32 +517,26 @@ bool GraspPlace::fiveFightGripperPoseIndex(int index)
     ROS_INFO_STREAM("Pose index: " << index);
     hirop_msgs::moveSeqIndex srv;
     srv.request.index = index;
-    if(moveSeqClient.call(srv))
-    {
-        if(srv.response.sucesss)
-            ROS_INFO_STREAM("alreay move to pose");
+    if(!isStop)
+        if(moveSeqClient.call(srv))
+        {
+            if(srv.response.sucesss)
+                ROS_INFO_STREAM("alreay move to pose");
+            else
+                ROS_INFO_STREAM("move to pose faild");
+            return srv.response.sucesss;
+        }
         else
-            ROS_INFO_STREAM("move to pose faild");
-        return srv.response.sucesss;
-    }
-    ROS_INFO_STREAM("check gripper server");
+            ROS_INFO_STREAM("check gripper server");
     return false;
 }
 
-bool GraspPlace::speedScale(bool isSlow)
+bool GraspPlace::speedScale(float scale)
 {
-    if(isSlow)
-    {
-	    ROS_INFO_STREAM("Velocity Scaling Factor: 0.1");
-        MoveGroup->setMaxVelocityScalingFactor(0.1);
-        MoveGroup->setMaxVelocityScalingFactor(0.1);
-    }
-    else
-    {
-	    ROS_INFO_STREAM("Velocity Scaling Factor: 1");
-        MoveGroup->setMaxVelocityScalingFactor(1);
-        MoveGroup->setMaxVelocityScalingFactor(1);
-    }
+
+    ROS_INFO_STREAM("Velocity Scaling Factor: " << scale);
+    MoveGroup->setMaxVelocityScalingFactor(scale);
+    MoveGroup->setMaxVelocityScalingFactor(scale);
     return true;
 }
 
