@@ -15,6 +15,12 @@ GraspPlace::GraspPlace(ros::NodeHandle n)
     getForceClient = nh.serviceClient<hirop_msgs::getForce>("getForce");
     moveSeqClient = nh.serviceClient<hirop_msgs::moveSeqIndex>("moveSeq");
 
+    robot_model_loader::RobotModelLoader robotModelLoader("robot_description");
+    robotModelPtr = robotModelLoader.getModel();
+    robotStatePtr = robot_state::RobotStatePtr(new robot_state::RobotState(robotModelPtr));
+    robotStatePtr->setToDefaultValues();
+    jointModelGroupPtr = robotModelPtr->getJointModelGroup("arm");
+
     // MoveGroup->setGoalPositionTolerance(0.01);
     MoveGroup->setGoalOrientationTolerance(0.05);
 } 
@@ -54,14 +60,15 @@ bool GraspPlace::code2Bool(moveit::planning_interface::MoveItErrorCode code)
 bool GraspPlace::setAndMove(geometry_msgs::PoseStamped& targetPose)
 {
     setStartState();
+    setConstraint();
     // ROS_INFO_STREAM("setAndMove: " << targetPose);
     MoveGroup->setPoseTarget(targetPose);
     MoveGroup->getPoseTarget();
     ROS_INFO_STREAM(MoveGroup->getPoseTarget());
     bool flag;
     flag = moveGroupPlanAndMove();
-    MoveGroup->detachObject(OBJECT);
-
+    // MoveGroup->detachObject(OBJECT);
+    clearConstraints();
     return flag;
 }
 
@@ -101,8 +108,8 @@ bool GraspPlace::loop_move()
 
 bool GraspPlace::robotMoveCartesianUnit2(double x, double y, double z)
 {
+    setConstraint();
     setStartState();
-
     geometry_msgs::PoseStamped temp_pose = MoveGroup->getCurrentPose();
 
     const double jump_threshold = 0.0;
@@ -549,5 +556,45 @@ geometry_msgs::PoseStamped GraspPlace::getNowPose()
 {
     setStartState();
     return MoveGroup->getCurrentPose();
+}
+
+bool GraspPlace::setConstraint()
+{
+    geometry_msgs::PoseStamped pose = MoveGroup->getPoseTarget();
+
+    // 现在的姿态
+    std::vector<double> current_joint = MoveGroup->getCurrentJointValues();
+    // 逆解的姿态
+    std::vector<double> joint;
+
+    std::size_t attempts = 10;
+    double timeout = 0.1;
+    bool found_ik = robotStatePtr->setFromIK(jointModelGroupPtr, pose.pose, attempts, timeout);
+    if(found_ik)
+    {
+        ROS_INFO_STREAM("姿态逆解成功");
+        robotStatePtr->copyJointGroupPositions(jointModelGroupPtr, joint);
+        // 中值
+        double centerJoint = (current_joint[3] + joint[3])/2;
+        double max_joint = std::max(current_joint[3], joint[3]);
+        moveit_msgs::Constraints con;
+        con.joint_constraints.resize(1);
+        con.joint_constraints[0].joint_name = "joint_4";
+        con.joint_constraints[0].position = centerJoint;
+        // max_joint - centerJoint > 0
+        con.joint_constraints[0].tolerance_above = (max_joint - centerJoint) + 0.05;
+        con.joint_constraints[0].tolerance_below = (max_joint - centerJoint) + 0.05;
+        con.joint_constraints[0].weight = 1;
+        MoveGroup->setPathConstraints(con);
+        return true;
+    }
+    ROS_INFO_STREAM("姿态逆解失败");
+    return false;
+}
+
+bool GraspPlace::clearConstraints()
+{
+    MoveGroup->clearPathConstraints();
+    return true;
 }
 

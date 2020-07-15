@@ -4,6 +4,7 @@
 #include "pick_place_bridge/SpeedScale.h"
 #include "rb_msgAndSrv/rb_DoubleBool.h"
 #include <std_srvs/Empty.h>
+#include <std_msgs/Float32.h>
 
 
 class Grasp : public GraspPlace
@@ -26,7 +27,7 @@ private:
 	// 话题回调
     void stopMoveCallback(const std_msgs::Bool::ConstPtr& msg);
     void startMoveCallback(const std_msgs::Bool::ConstPtr& msg);
-    // void speedScaleCallback(const std_msgs::Bool::ConstPtr& msg);
+    void speedScaleCallback(const std_msgs::Float32::ConstPtr& msg);
     
 	// 服务器
     ros::ServiceServer pickServer;
@@ -42,7 +43,7 @@ private:
 	// 订阅
     ros::Subscriber stopMoveSub;
     ros::Subscriber startMoveSub;
-    // ros::Subscriber speedScaleSub;
+    ros::Subscriber speedScaleSub;
 };
 
 Grasp::Grasp(ros::NodeHandle n)
@@ -62,7 +63,7 @@ Grasp::Grasp(ros::NodeHandle n)
 	// 话题
     stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::stopMoveCallback, this);
     startMoveSub = nh.subscribe("start_move", 1, &Grasp::startMoveCallback, this);
-    // speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
+    speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
     
 };
 
@@ -134,10 +135,10 @@ bool Grasp::backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Res
 }
 
 
-// void Grasp::speedScaleCallback(const std_msgs::Bool::ConstPtr& msg)
-// {
-//     // speedScale(msg->data);
-// }
+void Grasp::speedScaleCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+    speedScale(msg->data);
+}
 
 
 

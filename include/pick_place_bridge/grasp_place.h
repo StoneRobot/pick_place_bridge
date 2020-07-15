@@ -11,12 +11,17 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <moveit_msgs/RobotState.h>
+#include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
+#include <moveit/robot_model/joint_model_group.h>
 
 #include <math.h>
 
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 #include <Eigen/Geometry>
+
+#include <iostream>
 
 #include "hirop_msgs/openGripper.h"
 #include "hirop_msgs/closeGripper.h"
@@ -142,6 +147,8 @@ public:
     bool increaseTheAccuracyOfQuat(geometry_msgs::PoseStamped& pose);
 
     bool move(geometry_msgs::PoseStamped& pose);
+    bool setConstraint();
+    bool clearConstraints();
 private:
     geometry_msgs::PoseStamped getPreparePose(geometry_msgs::PoseStamped pose, double x);
     Eigen::Matrix3d Quaternion2RotationMatrix(const double x,const double y,const double z,const double w);
@@ -177,6 +184,10 @@ private:
     ros::NodeHandle nh;
     moveit::planning_interface::MoveGroupInterface* MoveGroup;
     bool isStop=false;
+
+    robot_model::RobotModelPtr robotModelPtr;
+    robot_state::RobotStatePtr robotStatePtr;
+    robot_state::JointModelGroup* jointModelGroupPtr;
 
     // 常量
     const std::string OBJECT = "object";
