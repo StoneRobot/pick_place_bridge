@@ -23,6 +23,8 @@
 
 #include <iostream>
 
+#include <vector>
+
 #include "hirop_msgs/openGripper.h"
 #include "hirop_msgs/closeGripper.h"
 #include "hirop_msgs/moveSeqIndex.h"
@@ -149,6 +151,7 @@ public:
     bool move(geometry_msgs::PoseStamped& pose);
     bool setConstraint();
     bool clearConstraints();
+    double chooseAngle(std::vector<double> joint, double currentJoint);
 private:
     geometry_msgs::PoseStamped getPreparePose(geometry_msgs::PoseStamped pose, double x);
     Eigen::Matrix3d Quaternion2RotationMatrix(const double x,const double y,const double z,const double w);

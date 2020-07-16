@@ -589,23 +589,31 @@ geometry_msgs::PoseStamped GraspPlace::getNowPose()
 
 bool GraspPlace::setConstraint()
 {
-    geometry_msgs::PoseStamped pose = MoveGroup->getPoseTarget();
-
+    geometry_msgs::PoseStamped targetPose = MoveGroup->getPoseTarget();
     // 现在的姿态
     std::vector<double> current_joint = MoveGroup->getCurrentJointValues();
     // 逆解的姿态
-    std::vector<double> joint;
-
+    std::vector<double> jointIK;
     std::size_t attempts = 10;
     double timeout = 0.1;
-    bool found_ik = robotStatePtr->setFromIK(jointModelGroupPtr, pose.pose, attempts, timeout);
-    if(found_ik)
+    bool found_ik;
+    std::vector<double> joint_4;
+    for(int i=0; i<5; i++)
     {
-        ROS_INFO_STREAM("姿态逆解成功");
-        robotStatePtr->copyJointGroupPositions(jointModelGroupPtr, joint);
+        found_ik = robotStatePtr->setFromIK(jointModelGroupPtr, targetPose.pose, attempts, timeout);
+        if(found_ik)
+        {
+            robotStatePtr->copyJointGroupPositions(jointModelGroupPtr, jointIK);
+            joint_4.push_back(jointIK[3]);
+        }
+    }
+    if(joint_4.size() > 0)
+    {
+        ROS_INFO_STREAM("---- IK SUCCEED ----");
+        double joint = chooseAngle(joint_4, current_joint[3]);
         // 中值
-        double centerJoint = (current_joint[3] + joint[3])/2;
-        double max_joint = std::max(current_joint[3], joint[3]);
+        double centerJoint = (current_joint[3] + joint)/2;
+        double max_joint = std::max(current_joint[3], joint);
         moveit_msgs::Constraints con;
         con.joint_constraints.resize(1);
         con.joint_constraints[0].joint_name = "joint_4";
@@ -619,6 +627,24 @@ bool GraspPlace::setConstraint()
     }
     ROS_INFO_STREAM("姿态逆解失败");
     return false;
+}
+
+double GraspPlace::chooseAngle(std::vector<double> joint, double currentJoint)
+{
+
+    double retDifference = abs(joint[0] - currentJoint);
+    double minDistanceAngle = joint[0];
+    double absRet;
+    for(int i=1; i < joint.size(); ++i)
+    {
+        absRet = abs(joint[i] - currentJoint);
+        if(absRet < retDifference)
+        {
+            retDifference = absRet;
+            minDistanceAngle = joint[i];
+        }
+    }
+    return minDistanceAngle;
 }
 
 bool GraspPlace::clearConstraints()
