@@ -152,6 +152,7 @@ public:
     bool setConstraint();
     bool clearConstraints();
     double chooseAngle(std::vector<double> joint, double currentJoint);
+    void setConStraintFlag(bool flag);
 private:
     geometry_msgs::PoseStamped getPreparePose(geometry_msgs::PoseStamped pose, double x);
     Eigen::Matrix3d Quaternion2RotationMatrix(const double x,const double y,const double z,const double w);
@@ -187,6 +188,7 @@ private:
     ros::NodeHandle nh;
     moveit::planning_interface::MoveGroupInterface* MoveGroup;
     bool isStop=false;
+    bool isSetConstraint;
 
     robot_model::RobotModelPtr robotModelPtr;
     robot_state::RobotStatePtr robotStatePtr;

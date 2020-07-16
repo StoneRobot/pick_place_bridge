@@ -28,6 +28,7 @@ private:
     void stopMoveCallback(const std_msgs::Bool::ConstPtr& msg);
     void startMoveCallback(const std_msgs::Bool::ConstPtr& msg);
     void speedScaleCallback(const std_msgs::Float32::ConstPtr& msg);
+    void isSetConstraintCallback(const std_msgs::Bool::ConstPtr& msg);
     
 	// 服务器
     ros::ServiceServer pickServer;
@@ -44,6 +45,7 @@ private:
     ros::Subscriber stopMoveSub;
     ros::Subscriber startMoveSub;
     ros::Subscriber speedScaleSub;
+    ros::Subscriber isSetConstraintSub;
 };
 
 Grasp::Grasp(ros::NodeHandle n)
@@ -64,6 +66,7 @@ Grasp::Grasp(ros::NodeHandle n)
     stopMoveSub = nh.subscribe("/stop_move", 1, &Grasp::stopMoveCallback, this);
     startMoveSub = nh.subscribe("start_move", 1, &Grasp::startMoveCallback, this);
     speedScaleSub = nh.subscribe("/speedScale", 10, &Grasp::speedScaleCallback, this);
+    isSetConstraintSub = nh.subscribe("/is_setConstrain", 10, &Grasp::isSetConstraintCallback, this);
     
 };
 
@@ -127,6 +130,11 @@ void Grasp::startMoveCallback(const std_msgs::Bool::ConstPtr& msg)
 {
     if(msg->data)
         setStopFlag(false);
+}
+
+void Grasp::isSetConstraintCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    setConStraintFlag(msg->data);
 }
 
 bool Grasp::backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep)

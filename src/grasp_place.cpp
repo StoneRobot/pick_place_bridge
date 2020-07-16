@@ -20,7 +20,7 @@ GraspPlace::GraspPlace(ros::NodeHandle n)
     robotStatePtr = robot_state::RobotStatePtr(new robot_state::RobotState(robotModelPtr));
     robotStatePtr->setToDefaultValues();
     jointModelGroupPtr = robotModelPtr->getJointModelGroup("arm");
-
+    isSetConstraint = false;
     // MoveGroup->setGoalPositionTolerance(0.01);
     MoveGroup->setGoalOrientationTolerance(0.05);
 } 
@@ -54,6 +54,11 @@ bool GraspPlace::code2Bool(moveit::planning_interface::MoveItErrorCode code)
         ROS_INFO_STREAM("code is FAILED");
         return false;
     }
+}
+
+void GraspPlace::setConStraintFlag(bool isSetConStrain)
+{
+    isSetConstraint = isSetConStrain;
 }
 
 
@@ -589,6 +594,11 @@ geometry_msgs::PoseStamped GraspPlace::getNowPose()
 
 bool GraspPlace::setConstraint()
 {
+    if(!isSetConstraint)
+    {
+        ROS_INFO_STREAM("not set constraint");
+        return false;
+    }
     geometry_msgs::PoseStamped targetPose = MoveGroup->getPoseTarget();
     // 现在的姿态
     std::vector<double> current_joint = MoveGroup->getCurrentJointValues();
