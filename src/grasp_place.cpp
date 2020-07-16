@@ -570,7 +570,7 @@ bool GraspPlace::fiveFightGripperPoseIndex(int index)
 bool GraspPlace::speedScale(float scale)
 {
 
-    ROS_INFO_STREAM("Velocity Scaling Factor: " << scale);
+    // ROS_INFO_STREAM("Velocity Scaling Factor: " << scale);
     MoveGroup->setMaxVelocityScalingFactor(scale);
     MoveGroup->setMaxVelocityScalingFactor(scale);
     return true;

@@ -95,7 +95,7 @@ bool Grasp::fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, p
 
 bool Grasp::moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
-    move(req.Pose);
+    rep.result = move(req.Pose);
     return rep.result;
 }
 
