@@ -153,6 +153,7 @@ public:
     bool clearConstraints();
     double chooseAngle(std::vector<double> joint, double currentJoint);
     void setConStraintFlag(bool flag);
+    void pubStatus(bool isBUSY);
 private:
     geometry_msgs::PoseStamped getPreparePose(geometry_msgs::PoseStamped pose, double x);
     Eigen::Matrix3d Quaternion2RotationMatrix(const double x,const double y,const double z,const double w);
@@ -173,6 +174,7 @@ private:
     /****** 发布 ******/
     // 用于发布OBJECT
     ros::Publisher planning_scene_diff_publisher;
+    ros::Publisher freeStatusPub;
     // 订阅
     // 从机器人上移除OBJECT
     ros::Subscriber detachObjectSub;

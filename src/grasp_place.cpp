@@ -7,6 +7,7 @@ GraspPlace::GraspPlace(ros::NodeHandle n)
     MoveGroup = new moveit::planning_interface::MoveGroupInterface(GROUP);
     // 发布
     planning_scene_diff_publisher = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 10);
+    freeStatusPub = nh.advertise<std_msgs::Bool>("rbCtlBusy_status", 10);
     // 订阅
     detachObjectSub = nh.subscribe("detach_object", 10, &GraspPlace::detachObjectCallback, this);
     // 客户端
@@ -526,6 +527,14 @@ bool GraspPlace::stop()
     MoveGroup->stop();
     return true;
 }
+
+void GraspPlace::pubStatus(bool isFree)
+{
+    std_msgs::Bool msg;
+    msg.data = isFree;
+    freeStatusPub.publish(msg);
+}
+
 
 bool GraspPlace::openGripper()
 {

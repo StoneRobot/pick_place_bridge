@@ -1,4 +1,4 @@
 <launch>
-    <node pkg="pick_place_bridge" type="pick" name="pick_place_bridge" output="screen" launch-prefix="gnome-terminal -e" />
+    <node pkg="pick_place_bridge" type="pick" name="pick_place_bridge" output="screen" />
     
 </launch>

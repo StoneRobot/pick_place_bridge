@@ -47,6 +47,7 @@ private:
     ros::Subscriber startMoveSub;
     ros::Subscriber speedScaleSub;
     ros::Subscriber isSetConstraintSub;
+    const bool BUSY = true;
 };
 
 Grasp::Grasp(ros::NodeHandle n)
@@ -73,39 +74,49 @@ Grasp::Grasp(ros::NodeHandle n)
 
 bool Grasp::pickCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
+    pubStatus(BUSY);
     rep.result = pick(req.Pose, 0.1, 0.1);
+    pubStatus(!BUSY);
     return rep.result;
 }
 
 bool Grasp::placeCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
+    pubStatus(BUSY);
     rep.result = place(req.Pose, 0.1, 0.1);
+    pubStatus(!BUSY);
     return rep.result;
 }
 
 bool Grasp::fixedPickCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
-    fixedPick(req.Pose, 0.1, 0.1);
-    rep.result = true;
-    return true;
+    pubStatus(BUSY);
+    rep.result = fixedPick(req.Pose, 0.1, 0.1);
+    pubStatus(!BUSY);
+    return rep.result;
 }
 
 bool Grasp::fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
-    fixedPlace(req.Pose.pose.position.y);
-    rep.result = true;
-    return true;
+    pubStatus(BUSY);
+    rep.result = fixedPlace(req.Pose.pose.position.y);
+    pubStatus(!BUSY);
+    return rep.result;
 }
 
 bool Grasp::moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep)
 {
+    pubStatus(BUSY);
     rep.result = move(req.Pose);
+    pubStatus(!BUSY);
     return rep.result;
 }
 
 bool Grasp::recerdPoseCallback(pick_place_bridge::recordPose::Request& req, pick_place_bridge::recordPose::Response& rep)
 {
+    pubStatus(BUSY);
     rep.pose = getNowPose();
+    pubStatus(!BUSY);
     return true;
 }
 
@@ -119,6 +130,7 @@ bool Grasp::setSpeedScaleCallback(pick_place_bridge::SpeedScale::Request& req, p
 bool Grasp::stopMoveCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep)
 {
     stop();
+    return true;
 }
 
 void Grasp::stopMoveCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -140,6 +152,7 @@ void Grasp::isSetConstraintCallback(const std_msgs::Bool::ConstPtr& msg)
 
 bool Grasp::backHomeCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep)
 {
+    pubStatus(BUSY);
     if(req.data)
     {
         rep.success = backHome();
@@ -149,6 +162,7 @@ bool Grasp::backHomeCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool:
         rep.success = false;
     }
     return  rep.success;
+    pubStatus(!BUSY);
 }
 
 
