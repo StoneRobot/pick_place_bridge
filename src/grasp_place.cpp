@@ -501,16 +501,22 @@ bool GraspPlace::move(geometry_msgs::PoseStamped& pose)
 bool GraspPlace::backHome()
 {
     ROS_INFO_STREAM("----back home ...----");
-    bool result=false;
+    bool result;
     if(!isStop)
     {
         MoveGroup->setNamedTarget(HOME_POSE);
         result = (MoveGroup->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        fiveFightGripperPoseIndex(HOME);
+        if(result)
+            ROS_INFO_STREAM("----back home SUCCESS----");
+        else
+            ROS_INFO_STREAM("----back home FAILED----");
     }
-    fiveFightGripperPoseIndex(HOME);
-    ROS_INFO_STREAM("----back home end----");
     if(isStop)
-        isStop=false;
+    {
+        result = false;
+        isStop = false;
+    }
     return result;
 }
 

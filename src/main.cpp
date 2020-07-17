@@ -4,6 +4,7 @@
 #include "pick_place_bridge/SpeedScale.h"
 #include "rb_msgAndSrv/rb_DoubleBool.h"
 #include <std_srvs/Empty.h>
+#include <std_srvs/SetBool.h>
 #include <std_msgs/Float32.h>
 
 
@@ -20,7 +21,7 @@ private:
     bool fixedPlaceCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool moveCallback(pick_place_bridge::PickPlacePose::Request& req, pick_place_bridge::PickPlacePose::Response& rep);
     bool recerdPoseCallback(pick_place_bridge::recordPose::Request& req, pick_place_bridge::recordPose::Response& rep);
-    bool backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep);
+    bool backHomeCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep);
     bool setSpeedScaleCallback(pick_place_bridge::SpeedScale::Request& req, pick_place_bridge::SpeedScale::Response& rep);
     bool stopMoveCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep);
 	
@@ -137,9 +138,17 @@ void Grasp::isSetConstraintCallback(const std_msgs::Bool::ConstPtr& msg)
     setConStraintFlag(msg->data);
 }
 
-bool Grasp::backHomeCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& rep)
+bool Grasp::backHomeCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep)
 {
-    backHome();
+    if(req.data)
+    {
+        rep.success = backHome();
+    }
+    else
+    {
+        rep.success = false;
+    }
+    return  rep.success;
 }
 
 
